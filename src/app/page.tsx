@@ -121,13 +121,13 @@ export default function Home() {
 
         if (normalizedSteps.length > 0 || (obj.goal || obj.instruction || obj.task || obj.objective || obj.init_prompt)) {
           // Robust success detection
-          let isSuccess = false;
-          if (obj.success !== undefined) isSuccess = !!obj.success;
-          else if (obj.is_success !== undefined) isSuccess = !!obj.is_success;
-          else if (obj.status !== undefined) isSuccess = obj.status === "completed";
-          else if (obj.done !== undefined) isSuccess = !!obj.done;
-          else if (obj.reward !== undefined) isSuccess = Number(obj.reward) >= 1;
-          else if (obj.last_reward !== undefined) isSuccess = Number(obj.last_reward) >= 1;
+          const statusStr = obj.status?.toString().toLowerCase().trim();
+          const isSuccess = statusStr === "completed" ||
+            !!obj.success ||
+            !!obj.is_success ||
+            !!obj.done ||
+            (obj.reward !== undefined && Number(obj.reward) >= 1) ||
+            (obj.last_reward !== undefined && Number(obj.last_reward) >= 1);
 
           const episode = {
             ...obj,
