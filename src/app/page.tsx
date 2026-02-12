@@ -7,15 +7,21 @@ import {
   Settings,
   ChevronDown,
   BookOpen,
-  History,
   User,
   CheckCircle,
   XCircle,
-  Menu,
-  X
+  X,
+  HelpCircle,
+  Download,
+  Terminal,
+  FileCode,
+  Languages,
+  Smile
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import {
   ALFEpisode,
   generateStory,
@@ -31,7 +37,7 @@ export default function Home() {
   const [episodes, setEpisodes] = useState<ALFEpisode[]>([]);
   const [selectedEpisodeIndex, setSelectedEpisodeIndex] = useState<number>(0);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [displayLanguage, setDisplayLanguage] = useState<'ja' | 'en'>('ja');
 
@@ -52,6 +58,33 @@ export default function Home() {
   const saveLanguage = (lang: 'ja' | 'en') => {
     setDisplayLanguage(lang);
     localStorage.setItem("alfworld_display_lang", lang);
+  };
+
+  const handleDownloadPDF = async () => {
+    const element = document.getElementById('diary-card');
+    if (!element) return;
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      pdf.save(`${agentName}_diary_${episodes[selectedEpisodeIndex].id}.pdf`);
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      alert("PDFの作成に失敗しました。");
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,11 +136,10 @@ export default function Home() {
             success: isSuccess
           };
           found.push(episode as ALFEpisode);
-          return found; // Found an episode, don't look deeper into its properties
+          return found;
         }
       }
 
-      // Handle Arrays explicitly
       if (Array.isArray(obj)) {
         obj.forEach(item => {
           found = [...found, ...extractEpisodes(item)];
@@ -115,12 +147,10 @@ export default function Home() {
         return found;
       }
 
-      // Special case for common wrapper
       if (obj.output?.result?.log) {
         found = [...found, ...extractEpisodes(obj.output.result.log)];
       }
 
-      // General traversal for objects
       Object.keys(obj).forEach(key => {
         const val = (obj as any)[key];
         if (val && typeof val === 'object') {
@@ -132,37 +162,27 @@ export default function Home() {
     };
 
     fileArray.forEach((file) => {
-      console.log(`[ALFWorld] Processing file: ${file.name}`);
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
           const rawContent = event.target?.result as string;
           let fileEpisodes: ALFEpisode[] = [];
 
-          // Try to parse as single JSON or JSON array
           try {
             const json = JSON.parse(rawContent);
             fileEpisodes = extractEpisodes(json);
-            console.log(`[ALFWorld] Parsed as JSON: ${fileEpisodes.length} episodes found`);
           } catch (e) {
-            console.log(`[ALFWorld] JSON parse failed, trying line-by-line (JSONL)...`);
-            // Try to parse as JSONL or pseudo-JSONL (objects separated by commas/newlines)
             const lines = rawContent.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-
-            lines.forEach((line, idx) => {
+            lines.forEach((line) => {
               try {
-                // Strip trailing commas which are common in "malformed" JSONL
                 const cleanLine = line.replace(/,$/, '').trim();
                 const item = JSON.parse(cleanLine);
                 const extracted = extractEpisodes(item);
                 if (extracted.length > 0) {
                   fileEpisodes = [...fileEpisodes, ...extracted];
                 }
-              } catch (err) {
-                // Skip invalid lines
-              }
+              } catch (err) { }
             });
-            console.log(`[ALFWorld] JSONL parse finished: ${fileEpisodes.length} episodes found`);
           }
 
           if (fileEpisodes.length > 0) {
@@ -176,7 +196,7 @@ export default function Home() {
           if (processedCount === fileArray.length) {
             setIsUploading(false);
             if (!anyValidData) {
-              alert("有効なエピソードが見つかりませんでした。ファイルの中に 'steps' または 'history' という名前の履歴データが含まれているか確認してください。");
+              alert("有効なエピソードが見つかりませんでした。");
             }
           }
         }
@@ -194,7 +214,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Loading Overlay */}
       <AnimatePresence>
         {isUploading && (
           <motion.div
@@ -206,16 +225,15 @@ export default function Home() {
             <div className="bg-card premium-card p-8 flex flex-col items-center gap-4">
               <div className="w-12 h-12 border-4 border-primary-main border-t-transparent rounded-full animate-spin" />
               <p className="font-serif italic text-xl">ペリーが日記を整理しています...</p>
-              <p className="text-sm text-foreground/60 tracking-wider">少々お待ちくださいなうローディング</p>
+              <p className="text-sm text-foreground/60 tracking-wider">少々お待ちください</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Header */}
+
       <header className="sticky top-0 z-30 w-full border-b border-border-main bg-background/80 backdrop-blur">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Episode Selector */}
             {episodes.length > 0 && (
               <div className="relative group">
                 <select
@@ -239,7 +257,6 @@ export default function Home() {
           </h1>
 
           <div className="flex items-center gap-4">
-            {/* Language Toggle */}
             <div className="flex items-center bg-secondary-soft rounded-lg p-1">
               <button
                 onClick={() => saveLanguage('ja')}
@@ -264,13 +281,20 @@ export default function Home() {
             <div className="h-6 w-px bg-border-main mx-1" />
 
             <button
+              onClick={() => setIsHelpOpen(true)}
+              className="p-2 rounded-full hover:bg-secondary-main transition-colors"
+              title="使い方ガイド"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+            <button
               onClick={() => setIsSettingsOpen(true)}
               className="p-2 rounded-full hover:bg-secondary-main transition-colors"
               title="設定"
             >
               <Settings className="w-5 h-5" />
             </button>
-            <label className="p-2 rounded-full hover:bg-secondary-main transition-colors cursor-pointer" title="JSONをアップロード">
+            <label className="p-2 rounded-full hover:bg-secondary-main transition-colors cursor-pointer" title="ログファイルを読み込む">
               <Upload className="w-5 h-5" />
               <input type="file" className="hidden" accept=".json" multiple onChange={handleFileUpload} />
             </label>
@@ -278,7 +302,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-8 max-w-3xl">
         <AnimatePresence mode="wait">
           {episodes.length === 0 ? (
@@ -310,9 +333,15 @@ export default function Home() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
-              {/* Episode Card */}
-              <div className="premium-card p-8 diary-paper relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4">
+              <div id="diary-card" className="premium-card p-8 diary-paper relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 flex items-center gap-3">
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="p-2 rounded-full hover:bg-primary-soft text-primary-main transition-colors no-print"
+                    title="PDFとして保存"
+                  >
+                    <Download className="w-5 h-5" />
+                  </button>
                   {currentEpisode.success ? (
                     <div className="flex items-center gap-1 text-green-600 font-bold italic">
                       <CheckCircle className="w-5 h-5" /> Success
@@ -328,7 +357,7 @@ export default function Home() {
                   {story.map((text, i) => (
                     <p key={i} className={cn(
                       "text-lg leading-relaxed",
-                      text.startsWith("【") ? "font-bold text-primary-main mb-6" : ""
+                      text.startsWith("【") || text.startsWith("[Goal]") ? "font-bold text-primary-main mb-6 underline decoration-primary-soft underline-offset-8" : ""
                     )}>
                       {text}
                     </p>
@@ -340,7 +369,85 @@ export default function Home() {
         </AnimatePresence>
       </main>
 
-      {/* Settings Modal */}
+      {/* Help Modal */}
+      <AnimatePresence>
+        {isHelpOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card w-full max-w-lg rounded-2xl shadow-xl border border-border-main p-8 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-serif font-bold flex items-center gap-2 text-primary-main">
+                  <HelpCircle className="w-6 h-6" /> 使い方ガイド
+                </h3>
+                <button onClick={() => setIsHelpOpen(false)} className="p-2 hover:bg-secondary-main rounded-full transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-8">
+                <section className="space-y-3">
+                  <h4 className="font-bold text-lg flex items-center gap-2 border-b border-primary-soft pb-2">
+                    <Terminal className="w-5 h-5 text-primary-main" /> 記録を読み込む
+                  </h4>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    右上の <Upload className="inline w-4 h-4" /> ボタンから、ALFWorldの実行ログ（JSONまたはJSONL形式）を選択してください。
+                    複数のファイルを一気にまとめて読み込むことも可能です。
+                  </p>
+                </section>
+
+                <section className="space-y-3">
+                  <h4 className="font-bold text-lg flex items-center gap-2 border-b border-primary-soft pb-2">
+                    <Languages className="w-5 h-5 text-primary-main" /> 日/英の切り替え
+                  </h4>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    ヘッダーの「日 / 英」スイッチで、エージェントの心情を交えた「日本語の物語」と、ログ原文に近い「英語表示」を即座に切り替えられます。
+                  </p>
+                </section>
+
+                <section className="space-y-3">
+                  <h4 className="font-bold text-lg flex items-center gap-2 border-b border-primary-soft pb-2">
+                    <Download className="w-5 h-5 text-primary-main" /> PDFでダウンロード
+                  </h4>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    日記の右上にある <Download className="inline w-4 h-4" /> ボタンを押すと、今表示されている日記をそのままの可愛らしいデザインでPDFとして保存できます。
+                  </p>
+                </section>
+
+                <section className="space-y-3">
+                  <h4 className="font-bold text-lg flex items-center gap-2 border-b border-primary-soft pb-2">
+                    <Smile className="w-5 h-5 text-primary-main" /> エージェント名の変更
+                  </h4>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    <Settings className="inline w-4 h-4" /> 設定ボタンから、エージェントにお好きな名前（例：ペリー、アリスなど）をつけることができます。名前は日記のタイトルに反映されます。
+                  </p>
+                </section>
+
+                <section className="space-y-3">
+                  <h4 className="font-bold text-lg flex items-center gap-2 border-b border-primary-soft pb-2">
+                    <FileCode className="w-5 h-5 text-primary-main" /> アイコンの意味
+                  </h4>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li className="flex items-center gap-2">✅ : エージェントが目標を最後まで達成できた記録です。</li>
+                    <li className="flex items-center gap-2">😖 : 途中で行き詰まってしまった時の試行錯誤の記録です。</li>
+                  </ul>
+                </section>
+              </div>
+
+              <button
+                onClick={() => setIsHelpOpen(false)}
+                className="w-full mt-10 py-4 bg-primary-main text-white rounded-xl font-bold hover:shadow-lg transition-all"
+              >
+                分かった！
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isSettingsOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -384,7 +491,6 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Footer */}
       <footer className="py-6 border-t border-border-main bg-card mt-auto gap-4">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           &copy; 2026 ALFWorld Viewer - エージェントの成長記録
