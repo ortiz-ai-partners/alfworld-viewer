@@ -367,24 +367,28 @@ export function translateObservation(obs: string, agentName: string): string {
     return translatedSentences.join(" ");
 }
 
-export function generateStory(episode: ALFEpisode, agentName: string): string[] {
-    const story: string[] = [];
-
+function getGoalRaw(episode: ALFEpisode): string {
     const e = episode as any;
-    let rawGoal = episode.goal || e.instruction || e.task || e.objective || e.goal_str || e.desc;
+    let goal = episode.goal || e.instruction || e.task || e.objective || e.goal_str || e.desc;
 
-    if (!rawGoal && episode.init_prompt) {
+    if (!goal && episode.init_prompt) {
         const taskMatch = episode.init_prompt.match(/Your task is to: (.*?)\./);
         if (taskMatch) {
-            rawGoal = taskMatch[1];
+            goal = taskMatch[1];
         } else {
             const lines = episode.init_prompt.split('\n');
             const objectiveLine = lines.find(l => l.includes("Your task is to:"));
             if (objectiveLine) {
-                rawGoal = objectiveLine.replace("Your task is to:", "").trim();
+                goal = objectiveLine.replace("Your task is to:", "").trim();
             }
         }
     }
+    return goal || "";
+}
+
+export function generateStory(episode: ALFEpisode, agentName: string): string[] {
+    const story: string[] = [];
+    const rawGoal = getGoalRaw(episode);
 
     let goalJa = (rawGoal || `エピソードログ (${episode.id})`)
         .replace(/put a/g, "〜を置く")
@@ -433,9 +437,8 @@ export function generateStory(episode: ALFEpisode, agentName: string): string[] 
 export function generateEnglishStory(episode: ALFEpisode): string[] {
     const story: string[] = [];
 
-    const e = episode as any;
-    const rawGoal = episode.goal || e.instruction || e.task || e.objective || e.goal_str || e.desc || "No Goal Provided";
-    story.push(`[Goal]: ${rawGoal}`);
+    const rawGoal = getGoalRaw(episode);
+    story.push(`[Goal]: ${rawGoal || "No Goal Provided"}`);
 
     if (episode.steps && Array.isArray(episode.steps)) {
         episode.steps.forEach((step, index) => {
