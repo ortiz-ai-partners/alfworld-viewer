@@ -1,0 +1,72 @@
+[
+  {
+    "id": "put_apple_in_microwave",
+    "goal": "put a clean apple in microwave",
+    "steps": [
+      {
+        "act": "start",
+        "obs": "You are in the middle of a room. On the countertop_1, you see apple_1, knife_1. On the fridge_1, you see bread_1."
+      },
+      {
+        "act": "go to countertop_1",
+        "obs": "You are at countertop_1. On the countertop_1, you see apple_1, knife_1."
+      },
+      {
+        "act": "take apple_1 from countertop_1",
+        "obs": "You pick up apple_1 from the countertop_1."
+      },
+      {
+        "act": "go to sink_1",
+        "obs": "You are at sink_1."
+      },
+      {
+        "act": "clean apple_1 with sink_1",
+        "obs": "You clean the apple_1 using the sink_1."
+      },
+      {
+        "act": "go to microwave_1",
+        "obs": "You are at microwave_1."
+      },
+      {
+        "act": "put apple_1 in microwave_1",
+        "obs": "You put the apple_1 in the microwave_1."
+      }
+    ],
+    "success": true
+  },
+  {
+    "id": "cool_mug",
+    "goal": "cool a mug and put it on sidetable",
+    "steps": [
+      {
+        "act": "start",
+        "obs": "You are in the middle of a room. On the table_1, you see mug_1."
+      },
+      {
+        "act": "go to table_1",
+        "obs": "You are at table_1. On the table_1, you see mug_1."
+      },
+      {
+        "act": "take mug_1 from table_1",
+        "obs": "You pick up mug_1 from the table_1."
+      },
+      {
+        "act": "go to fridge_1",
+        "obs": "You are at fridge_1."
+      },
+      {
+        "act": "cool mug_1 with fridge_1",
+        "obs": "You cool the mug_1 using the fridge_1."
+      },
+      {
+        "act": "go to sidetable_1",
+        "obs": "You are at sidetable_1."
+      },
+      {
+        "act": "put mug_1 on sidetable_1",
+        "obs": "You put the mug_1 on the sidetable_1."
+      }
+    ],
+    "success": false
+  }
+]

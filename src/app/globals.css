@@ -1,26 +1,43 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-background: #fdfaf6;
+  --color-foreground: #2d2a2e;
+  --color-card: #ffffff;
+  --color-card-foreground: #2d2a2e;
+  --color-primary-main: #8b5cf6;
+  --color-secondary-main: #f3f4f6;
+  --color-accent-main: #f59e0b;
+  --color-border-main: #e5e7eb;
+
+  --font-sans: "Inter", "Noto Sans JP", sans-serif;
+  --font-serif: "Crimson Pro", "Noto Serif JP", serif;
+
+  --radius-xl: 1rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.diary-paper {
+  background-image: linear-gradient(var(--color-border-main) 1px, transparent 1px);
+  background-size: 100% 2.5rem;
+  line-height: 2.5rem;
+}
+
+.premium-card {
+  background-color: var(--color-card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-main);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  transition: all 0.2s;
+}
+
+.premium-card:hover {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
