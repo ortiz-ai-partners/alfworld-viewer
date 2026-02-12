@@ -97,9 +97,12 @@ export default function Home() {
     let anyValidData = false;
 
     // Helper to find data with 'steps' or 'history' recursively
-    const extractEpisodes = (obj: any): ALFEpisode[] => {
+    const extractEpisodes = (obj: any, parentStatus?: string, parentSuccess?: boolean): ALFEpisode[] => {
       let found: ALFEpisode[] = [];
       if (!obj || typeof obj !== 'object') return found;
+
+      const currentStatus = obj.status || parentStatus;
+      const currentSuccess = obj.success !== undefined ? !!obj.success : parentSuccess;
 
       // Handle ALFWorld episode detection
       const stepsRaw = obj.steps || obj.history || obj.actions || obj.trajectory || obj.log || obj.items;
@@ -121,11 +124,14 @@ export default function Home() {
 
         if (normalizedSteps.length > 0 || (obj.goal || obj.instruction || obj.task || obj.objective || obj.init_prompt)) {
           // Robust success detection
-          const statusStr = obj.status?.toString().toLowerCase().trim();
+          const statusStr = currentStatus?.toString().toLowerCase().trim();
           const isSuccess = statusStr === "completed" ||
-            !!obj.success ||
-            !!obj.is_success ||
-            !!obj.done ||
+            statusStr === "success" ||
+            currentSuccess ||
+            obj.is_success === true ||
+            obj.result === true || // Specific boolean check
+            obj.result === "success" ||
+            obj.done === true ||
             (obj.reward !== undefined && Number(obj.reward) >= 1) ||
             (obj.last_reward !== undefined && Number(obj.last_reward) >= 1);
 
@@ -143,19 +149,20 @@ export default function Home() {
 
       if (Array.isArray(obj)) {
         obj.forEach(item => {
-          found = [...found, ...extractEpisodes(item)];
+          found = [...found, ...extractEpisodes(item, currentStatus, currentSuccess)];
         });
         return found;
       }
 
       if (obj.output?.result?.log) {
-        found = [...found, ...extractEpisodes(obj.output.result.log)];
+        // Special case for common nested structure
+        found = [...found, ...extractEpisodes(obj.output.result, currentStatus, currentSuccess)];
       }
 
       Object.keys(obj).forEach(key => {
         const val = (obj as any)[key];
-        if (val && typeof val === 'object') {
-          found = [...found, ...extractEpisodes(val)];
+        if (val && typeof val === 'object' && key !== 'output') { // Avoid double processing output if handled above
+          found = [...found, ...extractEpisodes(val, currentStatus, currentSuccess)];
         }
       });
 
