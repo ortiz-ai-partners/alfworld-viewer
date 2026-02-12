@@ -124,6 +124,7 @@ export default function Home() {
           let isSuccess = false;
           if (obj.success !== undefined) isSuccess = !!obj.success;
           else if (obj.is_success !== undefined) isSuccess = !!obj.is_success;
+          else if (obj.status !== undefined) isSuccess = obj.status === "completed";
           else if (obj.done !== undefined) isSuccess = !!obj.done;
           else if (obj.reward !== undefined) isSuccess = Number(obj.reward) >= 1;
           else if (obj.last_reward !== undefined) isSuccess = Number(obj.last_reward) >= 1;
