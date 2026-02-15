@@ -113,11 +113,25 @@ export default function Home() {
             return { act: step, obs: "", thought: "" };
           }
           if (step && typeof step === 'object') {
-            return {
-              act: step.act || step.action || step.command || step.step || "",
-              obs: step.obs || step.observation || step.reward || step.result || step.output || step.response || "",
-              thought: step.thought || step.reasoning || step.thinking || step.value || ""
-            };
+            let act = step.act || step.action || step.command || step.step || "";
+            let obs = step.obs || step.observation || step.reward || step.result || step.output || step.response || "";
+            let thought = step.thought || step.reasoning || step.thinking || step.value || "";
+
+            // User reported case: output field contains THOUGHT and ACTION
+            const rawOutput = (step.output || step.result?.output || "");
+            if (typeof rawOutput === 'string' && rawOutput.includes("THOUGHT:")) {
+              const parts = rawOutput.split(/ACTION:|Action:/i);
+              const extractedThought = parts[0].replace(/THOUGHT:|Thought:/i, "").trim();
+              if (extractedThought) {
+                thought = extractedThought;
+              }
+              const extractedAction = (parts[1] || "").trim();
+              if (extractedAction) {
+                act = extractedAction;
+              }
+            }
+
+            return { act, obs, thought };
           }
           return null;
         }).filter(s => s !== null && (s.act || s.obs || s.thought));

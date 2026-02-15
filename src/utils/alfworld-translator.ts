@@ -130,12 +130,25 @@ export function translateAction(step: ALFStep, agentName: string): string {
 
     let result = "";
     if (thought) {
-        const cleanThought = thought
+        let cleanThought = thought
             .replace(/I should /gi, "")
             .replace(/I will /gi, "")
             .replace(/First, /gi, "")
             .replace(/Now /gi, "")
-            .replace(/I need to /gi, "");
+            .replace(/I need to /gi, "")
+            .replace(/It is likely to be /gi, "おそらく〜にある")
+            .replace(/I will start by /gi, "まずは〜から始めよう")
+            .replace(/Then, /gi, "それから、")
+            .replace(/Finally, /gi, "最後に、")
+            .replace(/The task is to /gi, "タスクは〜することだ、")
+            .replace(/I need to find /gi, "〜を探す必要がある")
+            .replace(/I will begin with /gi, "まずは〜から取り掛かろう");
+
+        // Simple attempt to make it sound more like a thought in Japanese
+        if (!cleanThought.includes("しよう") && !cleanThought.includes("かな") && !cleanThought.includes("だ")) {
+            cleanThought = cleanThought.replace(/[.!?]$/, "") + "かな...";
+        }
+
         result += `（心の声: ${cleanThought}）\n`;
     }
 
