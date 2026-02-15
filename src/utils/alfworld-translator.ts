@@ -110,7 +110,7 @@ function pickRandom(arr: string[]): string {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export function translateAction(step: ALFStep, agentName: string): string {
+export function translateAction(step: ALFStep, agentName: string, includeThoughts: boolean = true): string {
     const action = step.act;
     if (!action || action === "start" || action === "look" || action.includes("task succeeded")) return "";
 
@@ -129,7 +129,7 @@ export function translateAction(step: ALFStep, agentName: string): string {
     }
 
     let result = "";
-    if (thought) {
+    if (includeThoughts && thought) {
         let cleanThought = thought
             .replace(/I should /gi, "")
             .replace(/I will /gi, "")
@@ -399,7 +399,7 @@ function getGoalRaw(episode: ALFEpisode): string {
     return goal || "";
 }
 
-export function generateStory(episode: ALFEpisode, agentName: string): string[] {
+export function generateStory(episode: ALFEpisode, agentName: string, includeThoughts: boolean = true): string[] {
     const story: string[] = [];
     const rawGoal = getGoalRaw(episode);
 
@@ -429,7 +429,7 @@ export function generateStory(episode: ALFEpisode, agentName: string): string[] 
 
     if (episode.steps && Array.isArray(episode.steps)) {
         episode.steps.forEach((step) => {
-            const actJa = translateAction(step, agentName);
+            const actJa = translateAction(step, agentName, includeThoughts);
             const obsJa = translateObservation(step.obs, agentName);
 
             if (actJa) story.push(actJa);
@@ -447,7 +447,7 @@ export function generateStory(episode: ALFEpisode, agentName: string): string[] 
 
     return story;
 }
-export function generateEnglishStory(episode: ALFEpisode): string[] {
+export function generateEnglishStory(episode: ALFEpisode, includeThoughts: boolean = true): string[] {
     const story: string[] = [];
 
     const rawGoal = getGoalRaw(episode);
@@ -455,7 +455,7 @@ export function generateEnglishStory(episode: ALFEpisode): string[] {
 
     if (episode.steps && Array.isArray(episode.steps)) {
         episode.steps.forEach((step, index) => {
-            if (step.thought) {
+            if (includeThoughts && step.thought) {
                 story.push(`Step ${index + 1} Thought: ${step.thought}`);
             }
             if (step.act) {

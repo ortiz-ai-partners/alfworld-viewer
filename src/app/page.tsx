@@ -39,15 +39,17 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [displayLanguage, setDisplayLanguage] = useState<'ja' | 'en'>('ja');
+  const [viewMode, setViewMode] = useState<'ja-thoughts' | 'ja-plain' | 'en-plain'>('ja-thoughts');
 
   // Load agent name and language from localStorage
   useEffect(() => {
     const savedName = localStorage.getItem("alfworld_agent_name");
     if (savedName) setAgentName(savedName);
 
-    const savedLang = localStorage.getItem("alfworld_display_lang") as 'ja' | 'en';
-    if (savedLang) setDisplayLanguage(savedLang);
+    const savedLang = localStorage.getItem("alfworld_display_lang") as any;
+    if (savedLang === 'ja' || savedLang === 'ja-thoughts') setViewMode('ja-thoughts');
+    else if (savedLang === 'ja-plain') setViewMode('ja-plain');
+    else if (savedLang === 'en' || savedLang === 'en-plain') setViewMode('en-plain');
   }, []);
 
   const saveAgentName = (name: string) => {
@@ -55,9 +57,9 @@ export default function Home() {
     localStorage.setItem("alfworld_agent_name", name);
   };
 
-  const saveLanguage = (lang: 'ja' | 'en') => {
-    setDisplayLanguage(lang);
-    localStorage.setItem("alfworld_display_lang", lang);
+  const saveViewMode = (mode: 'ja-thoughts' | 'ja-plain' | 'en-plain') => {
+    setViewMode(mode);
+    localStorage.setItem("alfworld_display_lang", mode);
   };
 
   const handleDownloadPDF = async () => {
@@ -230,9 +232,9 @@ export default function Home() {
 
   const currentEpisode = episodes[selectedEpisodeIndex];
   const story = currentEpisode ? (
-    displayLanguage === 'ja'
-      ? generateStory(currentEpisode, agentName)
-      : generateEnglishStory(currentEpisode)
+    viewMode === 'ja-thoughts' ? generateStory(currentEpisode, agentName, true) :
+      viewMode === 'ja-plain' ? generateStory(currentEpisode, agentName, false) :
+        generateEnglishStory(currentEpisode, false)
   ) : [];
 
   return (
@@ -282,22 +284,31 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <div className="flex items-center bg-secondary-soft rounded-lg p-1">
               <button
-                onClick={() => saveLanguage('ja')}
+                onClick={() => saveViewMode('ja-thoughts')}
                 className={cn(
-                  "px-3 py-1 text-xs font-bold rounded-md transition-all",
-                  displayLanguage === 'ja' ? "bg-primary-main text-white" : "text-muted-foreground hover:text-primary-main"
+                  "px-2 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap",
+                  viewMode === 'ja-thoughts' ? "bg-primary-main text-white" : "text-muted-foreground hover:text-primary-main"
                 )}
               >
-                日
+                心入り日
               </button>
               <button
-                onClick={() => saveLanguage('en')}
+                onClick={() => saveViewMode('ja-plain')}
                 className={cn(
-                  "px-3 py-1 text-xs font-bold rounded-md transition-all",
-                  displayLanguage === 'en' ? "bg-primary-main text-white" : "text-muted-foreground hover:text-primary-main"
+                  "px-2 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap",
+                  viewMode === 'ja-plain' ? "bg-primary-main text-white" : "text-muted-foreground hover:text-primary-main"
                 )}
               >
-                英
+                心なし日
+              </button>
+              <button
+                onClick={() => saveViewMode('en-plain')}
+                className={cn(
+                  "px-2 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap",
+                  viewMode === 'en-plain' ? "bg-primary-main text-white" : "text-muted-foreground hover:text-primary-main"
+                )}
+              >
+                心なし英
               </button>
             </div>
 
@@ -424,10 +435,13 @@ export default function Home() {
 
                 <section className="space-y-3">
                   <h4 className="font-bold text-lg flex items-center gap-2 border-b border-primary-soft pb-2">
-                    <Languages className="w-5 h-5 text-primary-main" /> 日/英の切り替え
+                    <Languages className="w-5 h-5 text-primary-main" /> 表示モードの切り替え
                   </h4>
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    ヘッダーの「日 / 英」スイッチで、エージェントの心情を交えた「日本語の物語」と、ログ原文に近い「英語表示」を即座に切り替えられます。
+                    ヘッダーのボタンで、以下の3つのモードを切り替えられます：<br />
+                    ・<strong>心入り日</strong>: 日本語＋エージェントの心の声（思考プロセス）<br />
+                    ・<strong>心なし日</strong>: 日本語のみ（物語風）<br />
+                    ・<strong>心なし英</strong>: 英語のみ（ログ原文風）
                   </p>
                 </section>
 
